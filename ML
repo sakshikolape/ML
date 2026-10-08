@@ -1,0 +1,260 @@
+PRACTICAL 1:Diabetes Prediction Using Pima Indians Dataset 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv"
+columns = [
+    'Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness',
+    'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age', 'Outcome'
+]
+data = pd.read_csv(url, header=None, names=columns)
+
+print("First 5 rows:\n", data.head())
+print("\nInfo:\n")
+print(data.info())
+print("\nSummary Statistics:\n", data.describe())
+
+cols_to_fix = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
+for col in cols_to_fix:
+    data[col] = data[col].replace(0, np.nan)
+    data[col] = data[col].fillna(data[col].median())
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(data.corr(numeric_only=True), annot=True, cmap='coolwarm')
+plt.title("Correlation Matrix")
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(6, 4))
+sns.countplot(x='Outcome', data=data)
+plt.title("Outcome Distribution")
+plt.tight_layout()
+plt.show()
+
+X = data.drop('Outcome', axis=1)
+y = data['Outcome']
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+accuracy = accuracy_score(y_test, y_pred)
+print(f"\nModel Accuracy: {accuracy * 100:.2f}%")
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
+importances = model.feature_importances_
+feat_importances = pd.Series(importances, index=X.columns)
+plt.figure(figsize=(10, 6))
+feat_importances.sort_values().plot(kind='barh')
+plt.title("Feature Importance from Random Forest")
+plt.tight_layout()
+plt.show()
+
+new_patient_data = pd.DataFrame([{
+    'Pregnancies': 2,
+    'Glucose': 120,
+    'BloodPressure': 70,
+    'SkinThickness': 30,
+    'Insulin': 80,
+    'BMI': 25.6,
+    'DiabetesPedigreeFunction': 0.6,
+    'Age': 32
+}])
+
+prediction = model.predict(new_patient_data)
+print("\nPrediction for new patient:", "Likely diabetic." if prediction[0] == 1 else "Unlikely diabetic.")
+
+PRACTICAL 2:Student Academic Performance Prediction (Pass/Fail Classification) 
+import pandas as pd 
+from sklearn.model_selection import train_test_split 
+from sklearn.preprocessing import MinMaxScaler 
+from sklearn.ensemble import RandomForestClassifier 
+from sklearn.metrics import accuracy_score, classification_report 
+ 
+df = pd.read_csv('StudentsPerformance.csv') 
+df = df.drop(columns=['StudentID'], errors='ignore') 
+passing_marks = 60 
+df['Pass_Fail'] = (df[['math score', 'reading score', 'writing score']].mean(axis=1) >= passing_marks).astype(int) 
+df = pd.get_dummies(df, drop_first=True) 
+X = df.drop('Pass_Fail', axis=1) 
+y = df['Pass_Fail'] 
+scaler = MinMaxScaler() 
+X_scaled = scaler.fit_transform(X) 
+X_train, X_test, y_train, y_test = train_test_split( 
+    X_scaled, y, test_size=0.2, random_state=42 
+) 
+model = RandomForestClassifier(random_state=42) 
+model.fit(X_train, y_train) 
+
+y_pred = model.predict(X_test) 
+print("Accuracy:", accuracy_score(y_test, y_pred)) 
+print(classification_report(y_test, y_pred))
+
+PRACTICAL 3:  Customer Churn Prediction for Telecom Industry 
+import pandas as pd 
+from sklearn.model_selection import train_test_split 
+from sklearn.preprocessing import StandardScaler 
+from sklearn.ensemble import RandomForestClassifier 
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix 
+
+df = pd.read_csv('P3WA_Fn-UseC_-Telco-Customer-Churn.csv') 
+df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce') 
+df['TotalCharges'] = df['TotalCharges'].fillna(df['TotalCharges'].median()) 
+df.drop('customerID', axis=1, inplace=True) 
+df['Churn'] = df['Churn'].map({'Yes':1, 'No':0}) 
+df.replace({'No phone service':'No', 'No internet service':'No'}, inplace=True) 
+df = pd.get_dummies(df, drop_first=True) 
+X = df.drop('Churn', axis=1) 
+y = df['Churn'] 
+X_train, X_test, y_train, y_test = train_test_split( 
+    X, y, test_size=0.2, random_state=42, stratify=y 
+) 
+num_cols = ['tenure', 'MonthlyCharges', 'TotalCharges'] 
+scaler = StandardScaler() 
+X_train[num_cols] = scaler.fit_transform(X_train[num_cols]) 
+X_test[num_cols] = scaler.transform(X_test[num_cols]) 
+clf = RandomForestClassifier(random_state=42) 
+clf.fit(X_train, y_train) 
+y_pred = clf.predict(X_test) 
+
+print("Accuracy:", accuracy_score(y_test, y_pred)) 
+print(classification_report(y_test, y_pred)) 
+print(confusion_matrix(y_test, y_pred)) 
+
+PRACTICAL 4: Email Spam Detection and Classification 
+ 
+Practical 4 
+Aim: Email Spam Detection and Classification 
+import pandas as pd 
+from sklearn.model_selection import train_test_split 
+from sklearn.feature_extraction.text import TfidfVectorizer 
+from sklearn.naive_bayes import MultinomialNB 
+from sklearn.metrics import accuracy_score, classification_report 
+df = pd.read_csv('spam.csv', encoding='latin-1')[['v1','v2']] 
+df.columns = ['label', 'text'] 
+df['label'] = df['label'].map({'spam':1, 'ham':0}) 
+ 
+X_train, X_test, y_train, y_test = train_test_split( 
+    df['text'], df['label'], test_size=0.2, random_state=42 
+) 
+vectorizer = TfidfVectorizer(stop_words='english') 
+X_train_tfidf = vectorizer.fit_transform(X_train) 
+X_test_tfidf  = vectorizer.transform(X_test) 
+ 
+clf = MultinomialNB() 
+clf.fit(X_train_tfidf, y_train) 
+y_pred = clf.predict(X_test_tfidf)
+
+print("Accuracy:", accuracy_score(y_test, y_pred)) 
+print(classification_report(y_test, y_pred)) 
+
+PRACTICAL 5: Time-Series Anamoly Detection Techniques
+import pandas as pd 
+import numpy as np 
+from sklearn.ensemble import IsolationForest 
+ 
+df = pd.read_csv('your_timeseries.csv', parse_dates=['timestamp'], index_col='timestamp') 
+series = df['value'] 
+ 
+model = IsolationForest(contamination=0.01, random_state=42) 
+df['anomaly'] = model.fit_predict(series.values.reshape(-1,1)) 
+anomalies = df[df['anomaly'] == -1] 
+print("Anomalies found:", anomalies) 
+
+PRACTICAL 6: Human Activity Recognition Using Sensor Data
+import pandas as pd 
+import numpy as np 
+from sklearn.model_selection import train_test_split 
+from sklearn.ensemble import RandomForestClassifier 
+from sklearn.metrics import classification_report 
+ 
+np.random.seed(42) 
+X = pd.DataFrame({ 
+    'accel_x': np.random.randn(100), 
+    'accel_y': np.random.randn(100), 
+    'accel_z': np.random.randn(100), 
+    'gyro_x': np.random.randn(100), 
+    'gyro_y': np.random.randn(100), 
+    'gyro_z': np.random.randn(100), 
+}) 
+activities = ['Walking', 'Running', 'Sitting'] 
+y = pd.DataFrame({ 
+    'Activity': np.random.choice(activities, size=100) 
+}) 
+X.to_csv('X.csv', index=False) 
+y.to_csv('y.csv', index=False) 
+print("   Files 'X.csv' and 'y.csv' created successfully.") 
+
+X = pd.read_csv('X.csv') 
+y = pd.read_csv('y.csv')['Activity'] 
+
+X_train, X_test, y_train, y_test = train_test_split( 
+    X, y, test_size=0.2, random_state=42, stratify=y 
+) 
+clf = RandomForestClassifier(random_state=42) 
+clf.fit(X_train, y_train) 
+y_pred = clf.predict(X_test) 
+print("\nClassification Report:\n") 
+print(classification_report(y_test, y_pred)) 
+
+PRACTICAL 7: Wine Quality Prediction Using Machine Learning 
+import pandas as pd 
+from sklearn.model_selection import train_test_split 
+from sklearn.ensemble import RandomForestClassifier 
+from sklearn.metrics import accuracy_score, classification_report 
+ 
+df = pd.read_csv('winequality-red.csv', sep=';') 
+df['good_quality'] = (df['quality'] >= 6).astype(int) 
+ 
+X = df.drop(['quality', 'good_quality'], axis=1) 
+y = df['good_quality'] 
+ 
+X_train, X_test, y_train, y_test = train_test_split( 
+    X, y, test_size=0.2, random_state=42 
+) 
+ 
+clf = RandomForestClassifier(random_state=42) 
+clf.fit(X_train, y_train) 
+y_pred = clf.predict(X_test) 
+ 
+print("Accuracy:", accuracy_score(y_test, y_pred)) 
+print(classification_report(y_test, y_pred)) 
+
+PRACTICAL 8:  Loan Eligibility Prediction Model
+import pandas as pd 
+from sklearn.model_selection import train_test_split 
+from sklearn.ensemble import RandomForestClassifier 
+from sklearn.metrics import accuracy_score, classification_report 
+
+df = pd.read_csv('loan_data.csv') 
+df['Loan_Status'] = df['Loan_Status'].map({'Y': 1, 'N': 0}) 
+df.drop(['Loan_ID'], axis=1, inplace=True) 
+df = pd.get_dummies(df, drop_first=True) 
+ 
+X = df.drop('Loan_Status', axis=1) 
+y = df['Loan_Status'] 
+
+X_train, X_test, y_train, y_test = train_test_split( 
+    X, y, test_size=0.3, random_state=42, stratify=y 
+) 
+
+print("Train class distribution:\n", y_train.value_counts()) 
+print("Test class distribution:\n", y_test.value_counts()) 
+
+clf = RandomForestClassifier(random_state=42) 
+clf.fit(X_train, y_train) 
+y_pred = clf.predict(X_test) 
+
+print("Actual labels:", y_test.values)  
+print("Predicted labels:", y_pred) 
+print("Accuracy:", accuracy_score(y_test, y_pred)) 
+print(classification_report(y_test, y_pred, zero_division=0))
